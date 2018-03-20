@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const request = require('request');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
@@ -24,11 +25,7 @@ var UserSchema = new mongoose.Schema({
   rut: {
     type: String,
     require: true,
-    minlength: 12,
-    validate: {
-      validator: this.isReal,
-      message: '{VALUE} is not a valid rut'
-    }
+    minlength: 9,
   },
   tokens: [{
     access: {
@@ -55,16 +52,19 @@ UserSchema.methods.generateAuthToken = function () {
   var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
 
   user.tokens.push({access, token});
-
   return user.save().then(() => {
     return token;
   });
 };
-UserSchema.methods.isReal = function () {
+UserSchema.methods.getDataPerson = function () {
   var user = this;
-  //Validar Rut si es rut  buscar en api https://api.rutify.cl/search?q=17998689-2 el nombrede la persona 
-  	console.log();
- 
+  var rut =user.rut;
+  request("https://api.rutify.cl/rut/"+rut, function (error, response, body) {
+      console.log('error:', error); // Print the error if one occurred
+      console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+      console.log('body:', body); // Print the HTML for the Google homepage.
+    });
+  // TODO:Validar Rut si es rut  buscar en api https://api.rutify.cl/search?q=17998689-2 el nombrede la persona 
 };
 UserSchema.methods.removeToken = function (token) {
   var user = this;
@@ -116,6 +116,7 @@ UserSchema.statics.findByCredentials = function (email, password) {
 
 UserSchema.pre('save', function (next) {
   var user = this;
+   
 
   if (user.isModified('password')) {
     bcrypt.genSalt(10, (err, salt) => {
@@ -125,7 +126,8 @@ UserSchema.pre('save', function (next) {
       });
     });
   } else {
-    next();
+      user.getDataPerson();
+        next();
   }
 });
 
