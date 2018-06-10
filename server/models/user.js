@@ -36,6 +36,24 @@ var UserSchema = new mongoose.Schema({
       type: String,
       required: true
     }
+  }],
+  dataElectoral:[{
+    nombre: {
+      type: String,
+      required: true
+    },
+    region: {
+      type: String,
+      required: true
+    },
+    provincia: {
+      type: String,
+      required: true
+    },
+    comuna: {
+      type: String,
+      required: true
+    }  
   }]
 });
 
@@ -59,12 +77,19 @@ UserSchema.methods.generateAuthToken = function () {
 UserSchema.methods.getDataPerson = function () {
   var user = this;
   var rut =user.rut;
-  request("https://api.rutify.cl/rut/"+rut, function (error, response, body) {
-      console.log('error:', error); // Print the error if one occurred
-      console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-      console.log('body:', body); // Print the HTML for the Google homepage.
+  var dataRequest = new Promise(function(resolve,reject){
+      request("https://api.rutify.cl/rut/"+rut, function (error, response, body) {
+      var statusCode= response && response.statusCode;
+      if(error) return reject(error);
+      try{
+        resolve(JSON.parse(body));
+      }catch(e){
+        reject(error);
+      }
     });
-  // TODO:Validar Rut si es rut  buscar en api https://api.rutify.cl/search?q=17998689-2 el nombrede la persona 
+  });
+  return dataRequest;
+   // TODO:Validar Rut si es rut  buscar en api https://api.rutify.cl/search?q=17998689-2 el nombrede la persona 
 };
 UserSchema.methods.removeToken = function (token) {
   var user = this;
@@ -126,8 +151,15 @@ UserSchema.pre('save', function (next) {
       });
     });
   } else {
-      user.getDataPerson();
-        next();
+    user.getDataPerson().then(function(dataUser){
+      var region=dataUser.servel.region;
+      var provincia=dataUser.servel.provincia;
+      var comuna=dataUser.servel.comuna;
+      var nombre=dataUser.nombre;
+      user.dataElectoral.push({region,provincia,comuna,nombre});
+      console.log(user.dataElectoral);
+     });
+     next();
   }
 });
 
