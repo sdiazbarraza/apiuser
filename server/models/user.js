@@ -157,7 +157,6 @@ UserSchema.pre('save', function (next) {
       var comuna=dataUser.servel.comuna;
       var nombre=dataUser.nombre;
       user.dataElectoral.push({region,provincia,comuna,nombre});
-      console.log(user.dataElectoral);
      });
      next();
   }
