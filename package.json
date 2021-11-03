@@ -19,6 +19,6 @@
     "mongodb": "^3.0.4",
     "mongoose": "^5.0.10",
     "nodemon": "^1.17.2",
-    "validator": "^9.4.1"
+    "validator": "^13.7.0"
   }
 }
